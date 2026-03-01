@@ -1,0 +1,4 @@
+config/settings.json
+logs/
+temp/
+.DS_Store
