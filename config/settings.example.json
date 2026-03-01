@@ -2,8 +2,12 @@
   "user": {
     "name": "Your Full Name",
     "bot_name": "EntzClawBot",
-    "report_email": "you@example.com",
-    "trusted_senders": ["colleague1", "@yourdomain.com"]
+    "report_email": "your-personal@example.com",
+    "trusted_senders": [
+      "Angelo",
+      "@yourcompany.com",
+      "exactaddress@example.com"
+    ]
   },
   "mail": {
     "account_id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",

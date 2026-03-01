@@ -1,8 +1,54 @@
-# OpenClaw Email Checker
+# Email Checker by EntzAI
 
-Checks your Apple Mail INBOX on a schedule. For each unread email it scores
-priority, generates an AI draft reply via a local or remote LLM, and emails
-you a report. Marks emails as read after processing.
+An automated email assistant for Apple Mail on macOS. Runs on a schedule,
+scores your unread emails by priority, drafts AI replies, and sends you a
+report — so you can manage your inbox from Telegram or WhatsApp without ever
+opening Mail.app.
+
+> **Requires:** macOS · Python 3 · Mail.app · Optional: local or remote LLM
+
+---
+
+## How It Works
+
+1. Runs on a schedule (hourly by default, fully configurable)
+2. Fetches unread emails from your Mail.app INBOX
+3. Scores each email **HIGH / MEDIUM / LOW** based on keywords and trusted senders
+4. Drafts a contextual AI reply for each email (or skips if LLM is disabled)
+5. Emails you a report with previews and draft replies
+6. Marks processed emails as read
+
+---
+
+## Use Cases
+
+### The OpenClaw Setup _(recommended)_
+
+This is the workflow the app was designed for:
+
+- You have a **dedicated machine or VM running OpenClaw** (your AI assistant)
+- That machine has its own **bot email account** in Mail.app — this is the inbox it watches
+- Email Checker runs on that machine **every hour via cron**
+- When emails arrive: checker scores them, drafts replies, and **sends a report to your personal email**
+- You read the report on your phone — you see each email's priority, a preview, and an AI-drafted reply
+- If you like a draft, you tell OpenClaw via **Telegram or WhatsApp**: _"Send that reply to Angelo"_
+- **You never open the bot's inbox.** The whole flow lives in your phone's chat
+
+This works great on macOS Tahoe (26.3) on Apple Silicon with OpenClaw as your always-on assistant.
+
+### Personal Productivity
+
+- Run on your main Mac, connected to your own Mail.app account
+- Get hourly digest reports with AI-drafted replies in your inbox
+- Review and approve drafts without context-switching into Mail.app
+- Send replies via `send_reply.py` or by telling OpenClaw
+
+### Low-Tech Mode _(no LLM)_
+
+- Set `"provider": "none"` in `settings.json`
+- Still scores and previews every unread email by priority
+- Report shows subject, sender, preview — no AI drafts
+- Useful for a smart email digest with zero LLM dependency
 
 ---
 
@@ -10,15 +56,15 @@ you a report. Marks emails as read after processing.
 
 ### 1. Prerequisites
 
-- macOS (Apple Silicon recommended)
+- macOS (tested on Tahoe 26.3, Apple Silicon)
 - Python 3 — `brew install python` if missing
-- Mail.app set up with at least one account
+- Mail.app configured with at least one account
 
-### 2. Clone / download
+### 2. Get the project
 
 ```bash
-git clone <repo> && cd cron
-# — or just copy this cron/ folder anywhere on your Mac
+git clone <repo-url>
+cd 001-email-checker-by-entzai
 ```
 
 ### 3. Run setup
@@ -28,11 +74,11 @@ bash setup.sh
 ```
 
 The wizard will:
-- Auto-discover your Mail.app accounts
-- Ask for your name, bot name, report email, trusted senders
+- Auto-discover your Mail.app accounts — pick yours from a numbered list
+- Prompt for your name, bot name, report destination email, and trusted senders
 - Let you pick an LLM provider (LM Studio, Ollama, OpenAI, or skip)
-- Test the LLM connection
-- Write `config/settings.json`
+- Test the LLM connection before saving
+- Write `config/settings.json` (gitignored — never leaves your machine)
 - Optionally install the crontab and run a first test
 
 ### 4. Grant Mail.app permissions
@@ -40,9 +86,9 @@ The wizard will:
 **System Settings → Privacy & Security → Automation**
 → Allow **Terminal** to control **Mail**
 
-If cron jobs fail with permission errors, also add Terminal under **Full Disk Access**.
+If cron jobs fail, also add Terminal under **Full Disk Access**.
 
-### 5. Test manually
+### 5. Test
 
 ```bash
 python3 scripts/email/checker.py
@@ -50,155 +96,151 @@ python3 scripts/email/checker.py
 
 ---
 
-## For ClawBot
+## Configuration
 
-### Where config lives
+All config lives in `config/settings.json` — created by `setup.sh`, gitignored.
+See `config/settings.example.json` for the full structure.
 
-`config/settings.json` — all user-specific values. Never committed to git.
-`config/settings.example.json` — template committed to git.
+### Trusted Senders
 
-### Re-run setup
+Trusted senders get a **+2 priority score boost**. Each entry is matched as a
+**case-insensitive substring** of the sender's full `From:` field.
 
-```bash
-bash setup.sh
+The `From:` field contains both the display name and address, e.g.:
+```
+Angelo Varlotta <angelo@varlotta.email>
 ```
 
-Choose `y` when asked to reconfigure.
+| Entry | What it matches | Use when |
+|---|---|---|
+| `"Angelo"` | Display name (partial) | You know their first name |
+| `"@company.com"` | Everyone from a domain | Trust a whole organisation |
+| `"alice@example.com"` | That exact address only | Specific person, any display name |
 
-### Trigger a manual check
+**Example:**
+```json
+"trusted_senders": ["Angelo", "lorentz", "@varlotta.email", "boss@bigcorp.com"]
+```
+
+You can update this list by:
+- Editing `config/settings.json` directly, or
+- Telling OpenClaw via Telegram/WhatsApp: _"Add sarah@example.com to trusted senders"_
+
+### LLM Providers
+
+| Provider | `provider` | `base_url` | Notes |
+|---|---|---|---|
+| LM Studio | `lm_studio` | Your LM Studio URL | Local or remote vLLM |
+| Ollama | `ollama` | `http://localhost:11434/v1` | Local, set by setup.sh |
+| OpenAI | `openai` | `https://api.openai.com/v1` | Requires API key |
+| Disabled | `none` | — | Reports without drafts |
+
+### Cron Schedule
+
+Default: every hour. Change by editing crontab (`crontab -e`):
+
+```
+# Every hour (default)
+0 * * * * /abs/path/to/scripts/email/checker_wrapper.sh
+
+# Every 30 minutes
+*/30 * * * * /abs/path/to/scripts/email/checker_wrapper.sh
+
+# Every 5 minutes
+*/5 * * * * /abs/path/to/scripts/email/checker_wrapper.sh
+```
+
+Re-run `bash setup.sh` to reinstall crontab with updated paths if you move the folder.
+
+---
+
+## Working with OpenClaw
+
+If you're running OpenClaw as your AI assistant, this app integrates naturally
+via Telegram or WhatsApp:
+
+**Update config:**
+> _"Add @newcompany.com to my trusted senders"_
+> _"Change my report email to myphone@example.com"_
+> _"Switch the LLM model to gpt-4o"_
+
+OpenClaw edits `config/settings.json` directly — changes take effect on the next run.
+
+**Send a reply:**
+> _"Send the draft reply to Angelo"_
+> _"Reply to the GitHub notification with: noted, reviewing tomorrow"_
+
+```bash
+python3 scripts/email/send_reply.py \
+    --to angelo@varlotta.email \
+    --subject "Re: Something" \
+    --content "Your reply here"
+
+# From a file
+python3 scripts/email/send_reply.py \
+    --to someone@example.com \
+    --subject "Re: Something" \
+    --file /path/to/draft.txt
+```
+
+**Trigger a manual check:**
+> _"Run the email checker now"_
 
 ```bash
 python3 scripts/email/checker.py
 ```
 
-### Send a manual reply
-
-```bash
-python3 scripts/email/send_reply.py \
-    --to recipient@example.com \
-    --subject "Re: Something" \
-    --content "Your reply here"
-
-# Or from a file:
-python3 scripts/email/send_reply.py \
-    --to recipient@example.com \
-    --subject "Re: Something" \
-    --file /path/to/draft.txt
-```
-
-### Check logs
-
+**Check logs:**
 ```bash
 tail -f logs/email_check.log
 ```
-
-### Update crontab path after moving the folder
-
-Re-run `bash setup.sh` and choose `y` when asked to install crontab. It
-writes absolute paths based on the current location.
 
 ---
 
 ## Directory Structure
 
 ```
-cron/
+001-email-checker-by-entzai/
 ├── README.md
 ├── setup.sh                           # Interactive setup wizard
+├── _meta.json                         # ClawHub metadata
 ├── config/
 │   ├── settings.example.json          # Template (committed to git)
 │   ├── settings.json                  # Your config (gitignored)
-│   └── email_check_crontab.txt        # Reference copy of cron schedule
+│   └── email_check_crontab.txt        # Cron reference (written by setup.sh)
 ├── scripts/
 │   └── email/
-│       ├── checker.py                 # Main email checker (cron target)
+│       ├── checker.py                 # Main email checker
 │       ├── checker_wrapper.sh         # Cron entry point — owns logging
 │       ├── get_unread_emails.scpt     # AppleScript: fetch unread emails
-│       ├── send_reply.py              # Manual reply sender
-│       ├── template.py                # Template for new Python scripts
-│       └── template.sh                # Template for new Bash scripts
+│       └── send_reply.py             # Manual / OpenClaw reply sender
 ├── logs/                              # Runtime logs (gitignored)
-│   └── email_check.log
-└── temp/                              # Runtime temp files (gitignored)
-    ├── email_report.txt
-    └── recent_emails.json
+└── temp/                              # Runtime cache (gitignored)
 ```
-
----
-
-## Scripts Reference
-
-### `checker.py` — Email Checker
-
-Runs on cron. Each run:
-1. Fetches unread emails from Mail.app INBOX via AppleScript
-2. Scores each email HIGH / MEDIUM / LOW (keywords + trusted senders)
-3. Generates a draft reply for each email using the configured LLM
-4. Sends a report to your `report_email`
-5. Marks processed emails as read
-
-All config comes from `config/settings.json`.
-
-**LLM providers supported:**
-
-| Provider  | `provider` value | Notes |
-|-----------|-----------------|-------|
-| LM Studio | `lm_studio`     | Local or remote vLLM endpoint |
-| Ollama    | `ollama`        | Local; default URL set by setup.sh |
-| OpenAI    | `openai`        | Requires API key |
-| Disabled  | `none`          | Reports without draft replies |
-
-### `checker_wrapper.sh` — Cron Entry Point
-
-Called by cron (not `checker.py` directly). Uses relative paths — works
-from any install location. Handles log directory creation and header lines.
-
-### `get_unread_emails.scpt` — AppleScript Fetcher
-
-Called internally by `checker.py`. Receives `account_id` as a CLI argument.
-Returns emails in `sender|subject|||content` format.
-
-### `send_reply.py` — Manual Reply Sender
-
-Run manually to reply to a specific email. Logs to `logs/email_check.log`.
-
----
-
-## Cron Schedule
-
-```
-@reboot       /abs/path/to/checker_wrapper.sh   # On system startup
-0 * * * *     /abs/path/to/checker_wrapper.sh   # Every hour
-```
-
-See `config/email_check_crontab.txt` for the paths as installed on this machine.
 
 ---
 
 ## Troubleshooting
 
-### LM Studio timeout
+**"Config not found. Run setup.sh first."**
+Run `bash setup.sh` — it walks you through everything.
 
-> `LLM connection failed` in the log
+**"Not authorized to send Apple events to Mail"**
+System Settings → Privacy & Security → Automation → Allow Terminal to control Mail.
+If using cron, also add Terminal to Full Disk Access.
 
-The LM Studio server may still be processing a previous request from a timed-out
-call. Wait 1–2 minutes before retrying. The model is queued server-side.
+**LLM times out or connection failed**
+The model may still be processing a previous request server-side. Wait 1–2 minutes.
+Increase `"timeout"` in `settings.json` for slow models.
 
-### Mail.app permissions denied
+**Wrong account / no emails detected**
+Re-run `bash setup.sh` — it lists all Mail.app accounts for you to pick from.
 
+**Logs not writing**
+```bash
+chmod +x scripts/email/checker_wrapper.sh
 ```
-osascript: OpenMail.app got an error: Not authorized to send Apple events to Mail.
-```
 
-Go to **System Settings → Privacy & Security → Automation** and allow Terminal
-(or whichever app runs the script) to control Mail.
+---
 
-### Account ID not working
-
-Run `bash setup.sh` again — it auto-discovers accounts from Mail.app. Pick yours
-from the numbered list.
-
-### Logs not being written
-
-The wrapper creates `logs/` automatically. If it's missing, check that the
-wrapper script is executable: `chmod +x scripts/email/checker_wrapper.sh`
+_Built by EntzAI · Powered by OpenClaw_

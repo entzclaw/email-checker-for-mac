@@ -1,0 +1,13 @@
+{
+  "slug": "email-checker-by-entzai",
+  "name": "Email Checker by EntzAI",
+  "version": "1.0.0",
+  "description": "Automated email assistant for Apple Mail. Scores priority, drafts AI replies, and sends you a report on a schedule. Manage your inbox from Telegram or WhatsApp.",
+  "os": ["darwin"],
+  "requires": {
+    "bins": ["python3", "osascript"],
+    "apps": ["Mail.app"]
+  },
+  "emoji": "📬",
+  "author": "EntzAI"
+}

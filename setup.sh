@@ -104,7 +104,12 @@ BOT_NAME="${BOT_NAME:-EntzClawBot}"
 
 read -r -p "Report recipient email: " REPORT_EMAIL
 
-read -r -p "Trusted senders — comma-separated names/domains (e.g. alice,@company.com): " TRUSTED_SENDERS_RAW
+echo "Trusted senders get a priority boost. Each entry is matched as a substring"
+echo "of the sender's From: field (name + address). Examples:"
+echo "  'Angelo'           — matches anyone named Angelo"
+echo "  '@company.com'     — matches everyone from that domain"
+echo "  'alice@example.com'— matches that exact address"
+read -r -p "Trusted senders (comma-separated): " TRUSTED_SENDERS_RAW
 echo ""
 
 # ── LLM provider ─────────────────────────────────────────────────────────────
