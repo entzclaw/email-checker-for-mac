@@ -200,7 +200,7 @@ tail -f logs/email_check.log
 ## Directory Structure
 
 ```
-001-email-checker-by-entzai/
+email-checker-for-mac/
 ├── README.md
 ├── setup.sh                           # Interactive setup wizard
 ├── _meta.json                         # ClawHub metadata
