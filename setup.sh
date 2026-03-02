@@ -128,7 +128,11 @@ while true; do
             LLM_BASE_URL="${LLM_BASE_URL:-http://localhost:1234/v1}"
             read -r -p "  API key [local]: " LLM_API_KEY
             LLM_API_KEY="${LLM_API_KEY:-local}"
-            read -r -p "  Model ID: " LLM_MODEL
+            while true; do
+                read -r -p "  Model ID: " LLM_MODEL
+                [ -n "$LLM_MODEL" ] && break
+                echo "  Model ID is required."
+            done
             break ;;
         2)
             LLM_PROVIDER="ollama"

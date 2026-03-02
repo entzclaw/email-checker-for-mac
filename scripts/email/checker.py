@@ -13,8 +13,6 @@ CHANGELOG:
 
   v2 (LM Studio update):
   - Replaced Ollama API with LM Studio / vLLM OpenAI-compatible API
-    endpoint: https://my-lm-studio.entzai.com/v1
-    model:    qwen3.5-122b-a10b
   - call_ollama() renamed to call_lm_studio() and rewritten for
     OpenAI /v1/chat/completions format
   - Increased thread history from 5 → 10 messages

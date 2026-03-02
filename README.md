@@ -108,18 +108,18 @@ Trusted senders get a **+2 priority score boost**. Each entry is matched as a
 
 The `From:` field contains both the display name and address, e.g.:
 ```
-Angelo Varlotta <angelo@varlotta.email>
+Alice Smith <alice@company.com>
 ```
 
 | Entry | What it matches | Use when |
 |---|---|---|
-| `"Angelo"` | Display name (partial) | You know their first name |
+| `"Alice"` | Display name (partial) | You know their first name |
 | `"@company.com"` | Everyone from a domain | Trust a whole organisation |
 | `"alice@example.com"` | That exact address only | Specific person, any display name |
 
 **Example:**
 ```json
-"trusted_senders": ["Angelo", "lorentz", "@varlotta.email", "boss@bigcorp.com"]
+"trusted_senders": ["Alice", "bob", "@mycompany.com", "ceo@bigcorp.com"]
 ```
 
 You can update this list by:
@@ -172,7 +172,7 @@ OpenClaw edits `config/settings.json` directly — changes take effect on the ne
 
 ```bash
 python3 scripts/email/send_reply.py \
-    --to angelo@varlotta.email \
+    --to colleague@example.com \
     --subject "Re: Something" \
     --content "Your reply here"
 

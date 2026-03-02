@@ -8,9 +8,9 @@ Usage:
 
 Examples:
     python3 send_reply.py \
-        --to angelo@varlotta.email \
-        --subject "Re: OpenClaw - Ollama" \
-        --content "Hi Angelo, thanks for the note! EntzClawBot 🤖"
+        --to colleague@example.com \
+        --subject "Re: Quick question" \
+        --content "Hi, thanks for the note! EntzClawBot 🤖"
 
     python3 send_reply.py \
         --to someone@example.com \
