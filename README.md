@@ -63,8 +63,8 @@ This works great on macOS Tahoe (26.3) on Apple Silicon with OpenClaw as your al
 ### 2. Get the project
 
 ```bash
-git clone <repo-url>
-cd 001-email-checker-by-entzai
+git clone https://github.com/entzclaw/email-checker-by-entzai
+cd email-checker-by-entzai
 ```
 
 ### 3. Run setup
