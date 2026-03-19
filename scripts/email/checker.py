@@ -539,11 +539,6 @@ def format_report(emails_data):
                 report.append("Preview:")
                 report.append(content[:150] + "..." if len(content) > 150 else content)
 
-            report.append("\nDraft Response:")
-            report.append("-" * 20)
-            draft = generate_contextual_draft(sender, subject, content)
-            report.append(draft)
-
         report.append("")
 
     # ── LOW priority ───────────────────────────────────────────────────────────
@@ -562,11 +557,6 @@ def format_report(emails_data):
             if content:
                 report.append("Preview:")
                 report.append(content[:150] + "..." if len(content) > 150 else content)
-
-            report.append("\nDraft Response:")
-            report.append("-" * 20)
-            draft = generate_contextual_draft(sender, subject, content)
-            report.append(draft)
 
         report.append("")
 

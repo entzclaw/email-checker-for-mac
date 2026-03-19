@@ -195,6 +195,33 @@ PYEOF
     echo ""
 fi
 
+# ── Check interval ────────────────────────────────────────────────────────────
+echo "How often should the checker run?"
+echo "  [1] Every 15 minutes"
+echo "  [2] Every 30 minutes"
+echo "  [3] Every hour (default)"
+echo "  [4] Custom interval"
+echo ""
+while true; do
+    read -r -p "Select interval [1-4]: " interval_choice
+    case "$interval_choice" in
+        1) INTERVAL_MINUTES=15;  break ;;
+        2) INTERVAL_MINUTES=30;  break ;;
+        3) INTERVAL_MINUTES=60;  break ;;
+        4)
+            while true; do
+                read -r -p "  Enter interval in minutes: " INTERVAL_MINUTES
+                if [[ "$INTERVAL_MINUTES" =~ ^[0-9]+$ ]] && [ "$INTERVAL_MINUTES" -ge 1 ]; then
+                    break
+                fi
+                echo "  Must be a positive integer."
+            done
+            break ;;
+        *) echo "  Invalid selection." ;;
+    esac
+done
+echo ""
+
 # ── Write settings.json ───────────────────────────────────────────────────────
 mkdir -p "$CONFIG_DIR"
 
@@ -207,6 +234,7 @@ LLM_PROVIDER="$LLM_PROVIDER" \
 LLM_BASE_URL="$LLM_BASE_URL" \
 LLM_API_KEY="$LLM_API_KEY" \
 LLM_MODEL="$LLM_MODEL" \
+INTERVAL_MINUTES="$INTERVAL_MINUTES" \
 python3 << 'PYEOF' > "$CONFIG_FILE"
 import json, os
 
@@ -224,6 +252,9 @@ config = {
         "account_id":  os.environ['MAIL_ACCOUNT_ID'],
         "inbox_name":  "INBOX"
     },
+    "schedule": {
+        "interval_minutes": int(os.environ['INTERVAL_MINUTES'])
+    },
     "llm": {
         "provider":   os.environ['LLM_PROVIDER'],
         "base_url":   os.environ['LLM_BASE_URL'],
@@ -240,24 +271,29 @@ echo "  ✓ settings.json written"
 
 # ── Install crontab ───────────────────────────────────────────────────────────
 WRAPPER="$SCRIPT_DIR/scripts/email/checker_wrapper.sh"
+
+if [ "$INTERVAL_MINUTES" -eq 60 ]; then
+    CRON_SCHEDULE="0 * * * *"
+else
+    CRON_SCHEDULE="*/$INTERVAL_MINUTES * * * *"
+fi
+
 echo ""
-echo "Cron schedule:"
-echo "  @reboot       — on system startup"
-echo "  0 * * * *     — every hour"
+echo "Cron schedule: $CRON_SCHEDULE (every ${INTERVAL_MINUTES} min) + @reboot"
 echo ""
 read -r -p "Install crontab? [y/N]: " install_cron
 if [[ "$install_cron" =~ ^[Yy]$ ]]; then
     ( crontab -l 2>/dev/null | grep -v checker_wrapper || true
       echo "@reboot $WRAPPER"
-      echo "0 * * * * $WRAPPER"
+      echo "$CRON_SCHEDULE $WRAPPER"
     ) | crontab -
     echo "  ✓ Crontab installed"
 
     # Update reference copy
     cat > "$CONFIG_DIR/email_check_crontab.txt" << EOF
-# Email checker - runs at startup and every hour
+# Email checker - runs at startup and every ${INTERVAL_MINUTES} minutes
 @reboot $WRAPPER
-0 * * * * $WRAPPER
+$CRON_SCHEDULE $WRAPPER
 EOF
     echo "  ✓ config/email_check_crontab.txt updated"
 fi
