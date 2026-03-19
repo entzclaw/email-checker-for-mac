@@ -2,3 +2,12 @@ config/settings.json
 logs/
 temp/
 .DS_Store
+docs/
+promotion/
+
+# Ignore all .md files except README.md and SKILL.md
+*.md
+!README.md
+!SKILL.md
+
+*.zip
