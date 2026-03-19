@@ -188,13 +188,18 @@ def get_thread_history(subject, sender, max_messages=10):
         sorted oldest-first. Empty list on failure or no history.
     """
 
-    # ── Normalise subject: strip Re:/Fwd:/Aw:/Sv: etc. ────────────────────────
-    base_subject = re.sub(
-        r'^(re|fwd|fw|aw|sv)\s*:\s*',
-        '',
-        subject.strip(),
-        flags=re.IGNORECASE
-    ).strip()
+    # ── Normalise subject ─────────────────────────────────────────────────────
+    # Strip leading bracket tags e.g. [EXTERNAL], [BULK], [SPAM]
+    # then strip reply/forward prefixes repeatedly until none remain,
+    # then strip trailing symbols/punctuation.
+    base_subject = subject.strip()
+    base_subject = re.sub(r'^\[[^\]]*\]\s*', '', base_subject)  # [TAG] prefix
+    while True:
+        stripped = re.sub(r'^(re|fwd|fw|aw|sv|ant)\s*:\s*', '', base_subject, flags=re.IGNORECASE).strip()
+        if stripped == base_subject:
+            break
+        base_subject = stripped
+    base_subject = re.sub(r'[\s\W]+$', '', base_subject).strip()  # trailing symbols
 
     if not base_subject:
         log("Thread history: subject normalised to empty, skipping")
